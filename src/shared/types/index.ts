@@ -139,6 +139,7 @@ export interface DownloadItem {
   speed?: string
   eta?: string
   extractProgress?: number
+  size?: string
 }
 
 export interface DownloadProgress {

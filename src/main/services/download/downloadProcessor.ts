@@ -8,6 +8,7 @@ import mirrorService from '../mirrorService'
 import settingsService from '../settingsService'
 import { DownloadItem } from '@shared/types'
 import { DownloadStatus } from '@shared/types'
+import { getAvailableDiskSpace, parseSizeToBytes, formatBytes } from './utils'
 
 // Type for VRP config - adjust if needed elsewhere
 interface VrpConfig {
@@ -139,6 +140,30 @@ export class DownloadProcessor {
       console.error(`[DownProc] Failed to create download directory ${downloadPath}:`, mkdirError)
       this.updateItemStatus(item.releaseName, 'Error', 0, errorMsg.substring(0, 500))
       return { success: false, startExtraction: false }
+    }
+
+    // Check available disk space before starting download
+    console.log(`[DownProc] Checking available disk space for ${item.releaseName}...`)
+    const availableSpace = await getAvailableDiskSpace(item.downloadPath)
+    const gameSizeBytes = item.size ? parseSizeToBytes(item.size) : 0
+    const requiredSpace = gameSizeBytes * 2 // Double the game size for download + extraction
+
+    if (availableSpace === null) {
+      console.warn(`[DownProc] Could not determine available disk space for ${item.releaseName}`)
+      // Continue anyway since we couldn't determine space
+    } else if (requiredSpace > 0 && availableSpace < requiredSpace) {
+      const errorMsg = `Insufficient disk space. Required: ${formatBytes(requiredSpace)}, Available: ${formatBytes(availableSpace)}`
+      console.error(`[DownProc] ${errorMsg} for ${item.releaseName}`)
+      this.updateItemStatus(item.releaseName, 'Error', 0, errorMsg)
+      return { success: false, startExtraction: false }
+    } else if (requiredSpace > 0) {
+      console.log(
+        `[DownProc] Disk space check passed for ${item.releaseName}. Game size: ${item.size}, Available: ${formatBytes(availableSpace)}, Required: ${formatBytes(requiredSpace)}`
+      )
+    } else {
+      console.warn(
+        `[DownProc] Could not determine game size for ${item.releaseName}, skipping disk space check`
+      )
     }
 
     this.updateItemStatus(item.releaseName, 'Downloading', 0)

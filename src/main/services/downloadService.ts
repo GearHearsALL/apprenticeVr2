@@ -153,7 +153,8 @@ class DownloadService extends EventEmitter implements DownloadAPI {
       progress: 0,
       addedDate: Date.now(),
       thumbnailPath: game.thumbnailPath,
-      downloadPath: this.downloadsPath
+      downloadPath: this.downloadsPath,
+      size: game.size
     }
     this.queueManager.addItem(newItem)
     console.log(`Added ${game.releaseName} to download queue.`)

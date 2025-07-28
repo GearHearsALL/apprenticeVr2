@@ -5,6 +5,7 @@ import dependencyService from '../dependencyService'
 import { DownloadItem, DownloadStatus } from '@shared/types'
 import SevenZip from 'node-7z'
 import mirrorService from '../mirrorService'
+import { getAvailableDiskSpace, getDirectorySize, formatBytes } from './utils'
 
 // Type for VRP config - reuse or import
 interface VrpConfig {
@@ -188,6 +189,30 @@ export class ExtractionProcessor {
       console.error(`[ExtractProc] 7zip dependency not ready for ${item.releaseName}.`)
       this.updateItemStatus(item.releaseName, 'Error', 100, '7zip not ready')
       return false
+    }
+
+    // Check available disk space before extraction
+    console.log(
+      `[ExtractProc] Checking available disk space for extraction of ${item.releaseName}...`
+    )
+    const availableSpace = await getAvailableDiskSpace(downloadPath)
+    const downloadedSize = await getDirectorySize(downloadPath)
+    // For extraction, we need space approximately equal to the compressed size
+    // since extracted content replaces the compressed files
+    const requiredSpace = downloadedSize
+
+    if (availableSpace === null) {
+      console.warn(`[ExtractProc] Could not determine available disk space for ${item.releaseName}`)
+      // Continue anyway since we couldn't determine space
+    } else if (availableSpace < requiredSpace) {
+      const errorMsg = `Insufficient disk space for extraction. Required: ${formatBytes(requiredSpace)}, Available: ${formatBytes(availableSpace)}`
+      console.error(`[ExtractProc] ${errorMsg} for ${item.releaseName}`)
+      this.updateItemStatus(item.releaseName, 'Error', 100, errorMsg)
+      return false
+    } else {
+      console.log(
+        `[ExtractProc] Disk space check passed for extraction of ${item.releaseName}. Downloaded: ${formatBytes(downloadedSize)}, Available: ${formatBytes(availableSpace)}, Required: ${formatBytes(requiredSpace)}`
+      )
     }
 
     let files: string[]
