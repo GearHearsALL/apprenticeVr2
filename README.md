@@ -1,6 +1,9 @@
 # ApprenticeVR
 
 ApprenticeVR is a modern, cross-platform desktop application built with Electron, React, and TypeScript, designed for managing and sideloading content onto Meta Quest devices. It aims to provide a user-friendly and feature-rich alternative to existing sideloading tools.
+This fork is made specifically to fix the issue with ApprenticeVR, where the VRP Mirror doesn't connect, due to a dead link. 
+This issue has been fixed. 
+It.. It was already fixed in someones ELSES fork but i forked it AGAIN, and added builds so you dont have to compile it yourself. 
 
 ## Inspiration
 
